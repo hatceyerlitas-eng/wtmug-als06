@@ -1,4 +1,10 @@
 <!DOCTYPE html>
+<!-- index.html ve ogrenci.html içindeki <body> etiketinin hemen altına ekleyin -->
+<a href="home.html" style="text-decoration:none;">
+    <button style="background-color: #555; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; margin-bottom: 10px;">
+        ⬅️ Ana Menü
+    </button>
+</a>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
@@ -17,6 +23,33 @@
 </head>
 <body>
     <h2>Hoca Paneli</h2>
+	    <!-- DERS VE HAFTA SEÇİMİ -->
+    <div style="background: #f0f0f0; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+        <label>Ders:</label>
+        <select id="dersSec">
+            <option value="">Ders Seçin</option>
+            <!-- app.js JSON'dan burayı dolduracak -->
+        </select>
+        
+        <label>Hafta:</label>
+        <select id="haftaSec">
+            <option value="">Hafta Seçin</option>
+            <option value="1">1. Hafta</option>
+            <option value="2">2. Hafta</option>
+            <option value="3">3. Hafta</option>
+            <option value="4">4. Hafta</option>
+            <option value="5">5. Hafta</option>
+            <option value="6">6. Hafta</option>
+            <option value="7">7. Hafta</option>
+            <option value="8">8. Hafta</option>
+            <option value="9">9. Hafta</option>
+            <option value="10">10. Hafta</option>
+            <option value="11">11. Hafta</option>
+            <option value="12">12. Hafta</option>
+            <option value="13">13. Hafta</option>
+            <option value="14">14. Hafta</option>
+        </select>
+    </div>
     
     <!-- SES YAYINI KISMI -->
     <div style="margin-bottom: 30px; padding: 10px; background: #eef;">

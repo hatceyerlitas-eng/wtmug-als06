@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sesli QR Yoklama - Ana Menü</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #f0f4f8; }
+        h1 { color: #317EFB; text-align: center; }
+        .btn-group { display: flex; gap: 20px; margin-top: 30px; }
+        button { padding: 20px 40px; font-size: 20px; border: none; border-radius: 10px; cursor: pointer; color: white; font-weight: bold; transition: 0.3s;}
+        button:hover { transform: scale(1.05); }
+        .hoca-btn { background-color: #4CAF50; }
+        .ogrenci-btn { background-color: #2196F3; }
+        .rapor-btn { background-color: #FF9800; }
+    </style>
+</head>
+<body>
+    <h1>📱 Sesli ve Kriptografik QR Yoklama Sistemi</h1>
+    <p>Lütfen giriş yapmak istediğiniz paneli seçin:</p>
+    
+    <div class="btn-group">
+        <button class="hoca-btn" onclick="window.location.href='index.html'">👨‍🏫 Hoca Paneli</button>
+        <button class="ogrenci-btn" onclick="window.location.href='ogrenci.html'">🎓 Öğrenci Paneli</button>
+    </div>
+    <div class="btn-group" style="margin-top: 10px;">
+        <button class="rapor-btn" onclick="window.location.href='rapor.html'">📊 Rapor Ekranı</button>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
