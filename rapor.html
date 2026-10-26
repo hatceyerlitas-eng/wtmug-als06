@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yoklama Raporu</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+        th { background-color: #317EFB; color: white; }
+        .tik { color: green; font-weight: bold; font-size: 18px; }
+        .carpi { color: red; font-weight: bold; font-size: 18px; }
+        select { padding: 10px; font-size: 16px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <a href="home.html"><button>⬅️ Ana Menü</button></a>
+    
+    <h2>📊 Yoklama Raporu</h2>
+    
+    <label>Ders Seçin: </label>
+    <select id="dersSec" onchange="raporuCiz()">
+        <option value="">-- Ders Seçin --</option>
+    </select>
+
+    <table id="raporTablo">
+        <thead>
+            <tr>
+                <th>Öğrenci No</th>
+                <th>Ad Soyad</th>
+                <!-- 1'den 14'e kadar hafta başlıkları -->
+                <script>
+                    for(let i=1; i<=14; i++) document.write(`<th>H${i}</th>`);
+                </script>
+                <th>Toplam</th>
+            </tr>
+        </thead>
+        <tbody id="raporGovde">
+            <tr><td colspan="17">Lütfen ders seçin...</td></tr>
+        </tbody>
+    </table>
+
+    <script>
+        let studentsData = [];
+        let coursesData = [];
+
+        // Verileri Yükle
+        async function init() {
+            try {
+                const sRes = await fetch('students.json');
+                studentsData = await sRes.json();
+                const cRes = await fetch('courses.json');
+                coursesData = await cRes.json();
+                
+                const dersSelect = document.getElementById('dersSec');
+                coursesData.forEach(c => {
+                    let opt = document.createElement('option');
+                    opt.value = c.dersKodu;
+                    opt.innerText = c.dersAdi;
+                    dersSelect.appendChild(opt);
+                });
+            } catch(e) {
+                alert("JSON dosyaları yüklenemedi. Live Server ile açtığınızdan emin olun.");
+            }
+        }
+        init();
+
+        function raporuCiz() {
+            let secilenDers = document.getElementById('dersSec').value;
+            let govde = document.getElementById('raporGovde');
+            govde.innerHTML = "";
+
+            if(!secilenDers) return;
+
+            let ders = coursesData.find(c => c.dersKodu === secilenDers);
+            if(!ders) return;
+
+            ders.kayitliOgrenciler.forEach(ogrNo => {
+                let ogr = studentsData.find(s => s.no === ogrNo);
+                if(!ogr) return;
+
+                let tr = document.createElement('tr');
+                tr.innerHTML = `<td>${ogr.no}</td><td>${ogr.ad} ${ogr.soyad}</td>`;
+
+                // localStorage'dan bu öğrencinin yoklamalarını al
+                let kayitKey = `yoklama_${secilenDers}_${ogrNo}`;
+                let imzalar = JSON.parse(localStorage.getItem(kayitKey)) || [];
+                let toplam = imzalar.length;
+
+                // 14 haftalık döngü
+                for(let h=1; h<=14; h++) {
+                    if(imzalar.includes(h)) {
+                        tr.innerHTML += `<td class="tik">✔</td>`;
+                    } else {
+                        tr.innerHTML += `<td class="carpi">✘</td>`;
+                    }
+                }
+                tr.innerHTML += `<td><strong>${toplam}</strong></td>`;
+                govde.appendChild(tr);
+            });
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
