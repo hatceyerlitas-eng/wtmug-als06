@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hoca Uygulaması</title>
+    <link rel="manifest" href="manifest.json">
+    <!-- QR Okuyucu Kütüphanesi -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
+        #reader { width: 100%; max-width: 400px; margin: 0 auto; display: none; }
+        #studentInfoCard { display: none; border: 2px solid #333; padding: 15px; margin-top: 20px; border-radius: 10px; background: #f9f9f9;}
+        .foto { width: 150px; height: 150px; object-fit: cover; border-radius: 50%; border: 3px solid #317EFB;}
+        .uyari { color: red; font-weight: bold; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <h2>Hoca Paneli</h2>
+    
+    <!-- SES YAYINI KISMI -->
+    <div style="margin-bottom: 30px; padding: 10px; background: #eef;">
+        <button id="startBtn">Yoklamayı Başlat (Ses Yayını)</button>
+        <button id="stopBtn" disabled>Durdur</button>
+        <h1 id="displayCode" style="font-size: 50px; color: red;">----</h1>
+    </div>
+
+    <!-- KAMERA VE QR OKUMA KISMI -->
+    <div>
+        <label>
+            <input type="checkbox" id="otoKamera"> Otomatik Kamera (Ses başlayınca aç)
+        </label><br><br>
+        <button id="openCameraBtn">Manuel Kamera Aç</button>
+        <div id="reader"></div>
+    </div>
+
+    <!-- SONUÇ EKRANI -->
+    <div id="studentInfoCard">
+        <h3>Yoklama Başarılı!</h3>
+        <img id="ogrFoto" class="foto" src="" alt="Öğrenci Fotoğrafı">
+        <p><strong>Ad Soyad:</strong> <span id="ogrAd"></span></p>
+        <p><strong>Numara:</strong> <span id="ogrNo"></span></p>
+        <p><strong>Bölüm:</strong> <span id="ogrBolum"></span></p>
+        <p><strong>Program:</strong> <span id="ogrProgram"></span></p>
+        <p><strong>Sınıf:</strong> <span id="ogrSinif"></span></p>
+        <div id="uyariAlani" class="uyari"></div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>

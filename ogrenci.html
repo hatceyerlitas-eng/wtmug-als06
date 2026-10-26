@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Öğrenci Uygulaması</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <h2>Öğrenci Paneli</h2>
+    <label>Öğrenci Numaranız:</label>
+    <input type="text" id="ogrenciNo" placeholder="Örn: 2024001"><br><br>
+
+    <button id="startListenBtn">Dinlemeyi Başlat</button>
+    <p id="status">Durum: Bekleniyor...</p>
+    <p>Sesden Çözülen Kod: <strong id="decodedCode">---</strong></p>
+    
+    <div id="qrcode" style="margin-top: 20px;"></div>
+
+    <h3>Manuel Kod Girişi (Mikrofon Çalışmazsa)</h3>
+    <input type="text" id="manuelKod" maxlength="4">
+    <button id="manuelBtn">Kodu Gir</button>
+
+    <script src="ogrenci.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>

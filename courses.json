@@ -1,0 +1,5 @@
+[
+  { "dersKodu": "BLM101", "dersAdi": "Programlamaya Giriş", "kayitliOgrenciler": ["2024001", "2024003", "2024004"] },
+  { "dersKodu": "BLM202", "dersAdi": "Web Teknolojileri", "kayitliOgrenciler": ["2024001", "2024002", "2024005"] },
+  { "dersKodu": "YZM301", "dersAdi": "Yapay Zeka", "kayitliOgrenciler": ["2024002", "2024004"] }
+]
