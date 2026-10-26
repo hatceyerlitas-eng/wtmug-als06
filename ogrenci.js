@@ -2,16 +2,18 @@ let audioCtx, analyser, dataArray;
 let mediaStream;
 let listening = false;
 
-// Aynı kodu tekrar okumamak için durum değişkenleri
-let lastDecoded = "";
-let silenceTimer = 0;
+let currentBuffer = "";
+let silenceTimer = null;
+
+// Debug için: ekranda hangi frekansların vurduğunu görmek isterseniz true yapın
+const DEBUG = true; 
 
 async function startListening() {
     try {
         mediaStream = await navigator.mediaDevices.getUserMedia({
             audio: {
-                echoCancellation: false, // Ödevde özellikle istenmiş: kapatılmalı!
-                autoGainControl: false,  // Ödevde özellikle istenmiş: kapatılmalı!
+                echoCancellation: false,
+                autoGainControl: false,
                 noiseSuppression: false
             }
         });
@@ -19,7 +21,8 @@ async function startListening() {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const source = audioCtx.createMediaStreamSource(mediaStream);
         analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 2048;
+        analyser.fftSize = 4096; // Daha hassas frekans çözünürlüğü için büyüttük
+        analyser.smoothingTimeConstant = 0.3; 
         source.connect(analyser);
 
         dataArray = new Uint8Array(analyser.frequencyBinCount);
@@ -33,47 +36,79 @@ async function startListening() {
     }
 }
 
-// Frekansları Analiz Etme
+function getFrequencyValue(targetFreq) {
+    // FFT bin boyutunu hesapla (örneğin 48000Hz / 4096 = 11.7 Hz)
+    const binSize = audioCtx.sampleRate / analyser.fftSize;
+    let index = Math.round(targetFreq / binSize);
+    
+    // Hedef binin etrafındaki ±3 binin ortalamasını al (daha kararlı)
+    let sum = 0, count = 0;
+    for (let i = -3; i <= 3; i++) {
+        if (dataArray[index + i] !== undefined) {
+            sum += dataArray[index + i];
+            count++;
+        }
+    }
+    return sum / count;
+}
+
 function detectTones() {
     if (!listening) return;
     requestAnimationFrame(detectTones);
 
     analyser.getByteFrequencyData(dataArray);
     
-    // DTMF frekansları için tepe noktalarını kontrol et
-    const binSize = audioCtx.sampleRate / analyser.fftSize;
-    
-    function checkFreq(freq) {
-        let index = Math.round(freq / binSize);
-        // Yanındaki binalara da bakarak daha güvenilir tespit
-        return dataArray[index-2] + dataArray[index-1] + dataArray[index] + dataArray[index+1] + dataArray[index+2];
+    // DTMF frekanslarının her birini ayrı ayrı ölç
+    const f697 = getFrequencyValue(697);
+    const f770 = getFrequencyValue(770);
+    const f852 = getFrequencyValue(852);
+    const f941 = getFrequencyValue(941);
+    const f1209 = getFrequencyValue(1209);
+    const f1336 = getFrequencyValue(1336);
+    const f1477 = getFrequencyValue(1477);
+
+    if (DEBUG) {
+        // Ekranda canlı frekans değerlerini göster (Sorun tespiti için)
+        let debugDiv = document.getElementById('debugInfo');
+        if(!debugDiv) {
+            debugDiv = document.createElement('pre');
+            debugDiv.id = 'debugInfo';
+            debugDiv.style.cssText = "background:#222; color:#0f0; padding:10px; font-size:12px;";
+            document.body.appendChild(debugDiv);
+        }
+        debugDiv.innerText = 
+            `697:${f697.toFixed(0)} | 770:${f770.toFixed(0)} | 852:${f852.toFixed(0)} | 941:${f941.toFixed(0)}\n` +
+            `1209:${f1209.toFixed(0)} | 1336:${f1336.toFixed(0)} | 1477:${f1477.toFixed(0)}`;
     }
 
-    // Hangi tuş basılıysa iki frekansında yüksek olması gerekir
-    const threshold = 400; // Kalibrasyon gerektirebilir
-    
-    let hitFreqs = [];
-    const freqs = [697, 770, 852, 941, 1209, 1336, 1477];
-    
-    freqs.forEach(f => {
-        if (checkFreq(f) > threshold) hitFreqs.push(f);
-    });
+    // EŞİK DEĞERLERİ (Kalibrasyon gerekebilir)
+    const HIGH_THRESHOLD = 100; // Ana ses çok yüksekse bu değeri artırın (örn: 150)
+    const LOW_THRESHOLD = 30;   // Hiçbir ses yoksa bu değerin altında kalır
 
-    if (hitFreqs.length === 2) {
-        let digit = getDigitFromFreqs(hitFreqs[0], hitFreqs[1]);
-        if (digit) {
-            processDigit(digit);
-        }
-    } else {
-        // Ses kesildi (Boşluk algılandı)
+    // Hangi sütun (high frekans) ve satır (low frekans) aktif?
+    let lowActive = null;
+    let highActive = null;
+
+    if (f697 > HIGH_THRESHOLD) lowActive = 697;
+    else if (f770 > HIGH_THRESHOLD) lowActive = 770;
+    else if (f852 > HIGH_THRESHOLD) lowActive = 852;
+    else if (f941 > HIGH_THRESHOLD) lowActive = 941;
+
+    if (f1209 > HIGH_THRESHOLD) highActive = 1209;
+    else if (f1336 > HIGH_THRESHOLD) highActive = 1336;
+    else if (f1477 > HIGH_THRESHOLD) highActive = 1477;
+
+    // Her iki frekans da aktifse rakamı bul
+    if (lowActive !== null && highActive !== null) {
+        let digit = getDigitFromFreqs(lowActive, highActive);
+        if (digit) processDigit(digit);
+    } else if (f697 < LOW_THRESHOLD && f770 < LOW_THRESHOLD && f852 < LOW_THRESHOLD && f941 < LOW_THRESHOLD) {
+        // Tam sessizlik algılandı
         processSilence();
     }
 }
 
-function getDigitFromFreqs(f1, f2) {
-    let low = Math.min(f1, f2);
-    let high = Math.max(f1, f2);
-    
+function getDigitFromFreqs(low, high) {
     if (low === 697 && high === 1209) return '1';
     if (low === 697 && high === 1336) return '2';
     if (low === 697 && high === 1477) return '3';
@@ -87,29 +122,32 @@ function getDigitFromFreqs(f1, f2) {
     return null;
 }
 
-let currentBuffer = "";
 function processDigit(digit) {
-    if (!currentBuffer.includes(digit)) { // Aynı saniyede aynı sesi tekrar yazmasın
-        currentBuffer += digit;
-        if (currentBuffer.length === 4) {
-            lastDecoded = currentBuffer;
-            generateQR(lastDecoded);
-            currentBuffer = ""; // Sıfırla
-        }
+    // Aynı rakamın tekrar tekrar eklenmesini engelle (Sadece son karakterden farklıysa ekle)
+    if (currentBuffer.length > 0 && currentBuffer[currentBuffer.length - 1] === digit) return;
+    
+    currentBuffer += digit;
+    document.getElementById('decodedCode').innerText = currentBuffer;
+
+    // 4 haneye ulaşıldıysa QR üret
+    if (currentBuffer.length === 4) {
+        generateQR(currentBuffer);
+        currentBuffer = ""; // Sıfırla
     }
 }
 
 function processSilence() {
-    // Eğer kısa bir sessizlik olduysa yarım kalan kodu sıfırla
-    // (Ödevdeki "Karışma ve Yanlış Okuma Engeli" maddesi)
     clearTimeout(silenceTimer);
     silenceTimer = setTimeout(() => {
-        currentBuffer = ""; 
-    }, 200); 
+        // 400ms sessizlik olduysa ve kod yarım kaldıysa iptal et
+        if (currentBuffer.length > 0 && currentBuffer.length < 4) {
+            document.getElementById('decodedCode').innerText = "---";
+            currentBuffer = "";
+        }
+    }, 400);
 }
 
 function generateQR(code) {
-    document.getElementById('decodedCode').innerText = code;
     let ogrenciNo = document.getElementById('ogrenciNo').value;
     
     if (!ogrenciNo) {
@@ -117,7 +155,7 @@ function generateQR(code) {
         return;
     }
 
-    let qrContent = code + ogrenciNo; // Ödevdeki "4 haneli kod + öğrenci numarası" kuralı
+    let qrContent = code + ogrenciNo;
     document.getElementById('qrcode').innerHTML = "";
     
     let qr = qrcode(0, 'L');
